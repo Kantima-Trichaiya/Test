@@ -8,53 +8,93 @@ st.set_page_config(
     page_title="Busy Buffet Dashboard",
     page_icon="🍽️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 # -----------------------------
-# Style
+# Theme / CSS
 # -----------------------------
 st.markdown("""
 <style>
     .main {
-        background-color: #f6f8fc;
+        background-color: #0c2232;
     }
+
     .block-container {
-        padding-top: 1.5rem;
+        padding-top: 1.2rem;
         padding-bottom: 2rem;
         max-width: 1350px;
     }
+
     .hero {
-        background: linear-gradient(135deg, #1f3c88, #4b7bec);
-        border-radius: 20px;
-        padding: 24px 28px;
-        color: white;
+        background: linear-gradient(135deg, #0f2738 0%, #142b3c 100%);
+        border: 1px solid #5e6c79;
+        border-radius: 22px;
+        padding: 26px 28px;
+        color: #e4eaed;
         margin-bottom: 20px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
     }
+
     .hero h1 {
         margin: 0;
         font-size: 2.2rem;
-        color: white;
+        color: #e4eaed;
+        letter-spacing: 0.2px;
     }
+
     .hero p {
         margin-top: 8px;
         font-size: 1rem;
-        opacity: 0.95;
+        color: #c7d1d7;
     }
+
     .section-card {
-        background: white;
+        background: #142b3c;
+        border: 1px solid #5e6c79;
         border-radius: 18px;
         padding: 18px 20px;
-        border: 1px solid #e9edf5;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
         margin-bottom: 18px;
     }
+
     div[data-testid="stMetric"] {
-        background: white;
-        border: 1px solid #e8ecf3;
+        background: #142b3c;
+        border: 1px solid #5e6c79;
         padding: 14px;
         border-radius: 16px;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+    }
+
+    div[data-testid="stMetricLabel"] {
+        color: #b7c3cb;
+    }
+
+    div[data-testid="stMetricValue"] {
+        color: #e4eaed;
+    }
+
+    div[data-testid="stDataFrame"] {
+        border: 1px solid #5e6c79;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    h1, h2, h3 {
+        color: #e4eaed;
+    }
+
+    p, label, .small-note {
+        color: #c7d1d7;
+    }
+
+    .judgement-box {
+        background: #0f2738;
+        border-left: 6px solid #5e6c79;
+        padding: 12px 16px;
+        border-radius: 12px;
+        margin-top: 10px;
+        color: #e4eaed;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -65,6 +105,21 @@ st.markdown("""
     <p>Customer waiting, dining duration, table pressure, and recommendation analysis</p>
 </div>
 """, unsafe_allow_html=True)
+
+# -----------------------------
+# Chart style
+# -----------------------------
+def apply_dark_chart_style():
+    plt.style.use("dark_background")
+    plt.rcParams["figure.facecolor"] = "#142b3c"
+    plt.rcParams["axes.facecolor"] = "#142b3c"
+    plt.rcParams["axes.edgecolor"] = "#5e6c79"
+    plt.rcParams["axes.labelcolor"] = "#e4eaed"
+    plt.rcParams["xtick.color"] = "#e4eaed"
+    plt.rcParams["ytick.color"] = "#e4eaed"
+    plt.rcParams["text.color"] = "#e4eaed"
+    plt.rcParams["axes.titlecolor"] = "#e4eaed"
+    plt.rcParams["grid.color"] = "#5e6c79"
 
 # -----------------------------
 # Helper functions
@@ -155,7 +210,9 @@ def build_heat_df(df):
 
     return pd.DataFrame(rows)
 
-
+# -----------------------------
+# Section renderers
+# -----------------------------
 def show_comment1(df):
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.subheader("Comment 1")
@@ -170,6 +227,7 @@ def show_comment1(df):
     comment1["wait_rate"] = comment1["waited_groups"] / comment1["total_groups"]
     comment1["walkaway_rate_among_waited"] = comment1["walkaway_count"] / comment1["waited_groups"]
 
+    apply_dark_chart_style()
     fig, ax = plt.subplots(1, 3, figsize=(16, 4))
     comment1["avg_wait"].plot(kind="bar", ax=ax[0], title="Avg Waiting Time")
     comment1["wait_rate"].plot(kind="bar", ax=ax[1], title="Wait Rate")
@@ -190,9 +248,16 @@ def show_comment1(df):
     ax[2].set_ylabel("Rate")
     plt.tight_layout()
     st.pyplot(fig)
+    plt.close(fig)
 
     st.dataframe(comment1.round(3), use_container_width=True)
-    st.warning("Judgement: Partially true")
+    st.markdown("""
+    <div class="judgement-box">
+        <b>Judgement: Partially true</b><br>
+        In-house guests do wait for tables. Walk-in guests wait longer on average.
+        However, walk-in guests are not more likely to walk away than in-house guests based on this dataset.
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -209,6 +274,7 @@ def show_comment2(df):
         walkaway_count=("walk_away", "sum")
     )
 
+    apply_dark_chart_style()
     fig, ax = plt.subplots(1, 3, figsize=(18, 4))
     comment2["total_pax"].plot(kind="bar", ax=ax[0], title="Total Pax by Day ID")
     comment2["waited_groups"].plot(kind="bar", ax=ax[1], title="Waited Groups by Day ID")
@@ -228,9 +294,16 @@ def show_comment2(df):
     ax[2].set_ylabel("Minutes")
     plt.tight_layout()
     st.pyplot(fig)
+    plt.close(fig)
 
     st.dataframe(comment2.round(3), use_container_width=True)
-    st.warning("Judgement: Partially true")
+    st.markdown("""
+    <div class="judgement-box">
+        <b>Judgement: Partially true</b><br>
+        The buffet has customers on every recorded day. However, severe congestion happens only on some days,
+        especially day 143 and day 153.
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -255,6 +328,7 @@ def show_comment3(df):
     comment3["long_stay_rate_over_90min"] = comment3["long_stay_over_90min"] / comment3["seated_groups"]
     comment3 = comment3.fillna(0)
 
+    apply_dark_chart_style()
     fig, ax = plt.subplots(1, 2, figsize=(12, 4))
     comment3["avg_dining"].plot(kind="bar", ax=ax[0], title="Average Dining Time")
     comment3["long_stay_rate_over_90min"].plot(kind="bar", ax=ax[1], title="Long-stay Rate (>90 min)")
@@ -268,7 +342,9 @@ def show_comment3(df):
     ax[1].set_ylabel("Rate")
     plt.tight_layout()
     st.pyplot(fig)
+    plt.close(fig)
 
+    apply_dark_chart_style()
     fig, ax = plt.subplots(figsize=(8, 4))
     seated_only = df[df["meal_start_td"].notna() & df["meal_end_td"].notna()].copy()
     seated_only.boxplot(column="dining_time", by="Guest_type", ax=ax)
@@ -277,17 +353,26 @@ def show_comment3(df):
     ax.set_ylabel("Minutes")
     plt.suptitle("")
     st.pyplot(fig)
+    plt.close(fig)
 
     st.dataframe(comment3.round(3), use_container_width=True)
-    st.warning("Judgement: Partially true")
+    st.markdown("""
+    <div class="judgement-box">
+        <b>Judgement: Partially true</b><br>
+        Walk-in guests do stay longer than in-house guests, but the phrase
+        “sit the whole day” is exaggerated.
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 
 def show_task2(df, heat_df):
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.subheader("Action 1: Reduce seating time")
+
     action1 = df[df["meal_start_td"].notna() & df["meal_end_td"].notna()].copy()
 
+    apply_dark_chart_style()
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.hist(action1["dining_time"].dropna(), bins=20, alpha=0.75)
     ax.axvline(300, linestyle="--", label="300 min (5 hours)")
@@ -296,45 +381,64 @@ def show_task2(df, heat_df):
     ax.set_ylabel("Frequency")
     ax.legend()
     st.pyplot(fig)
+    plt.close(fig)
 
-    st.warning("Conclusion: Not effective. Most customers dine far below 5 hours.")
+    st.markdown("""
+    <div class="judgement-box">
+        <b>Conclusion:</b> Not effective. Most customers dine far below 5 hours.
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.subheader("Action 2: Increase price every day to 259")
+
     action2 = df.groupby("date").agg(
         total_pax=("pax", "sum"),
         waited_groups=("queue_start_td", lambda s: s.notna().sum()),
         avg_wait=("waiting_time", "mean")
     )
 
+    apply_dark_chart_style()
     fig, ax = plt.subplots(1, 3, figsize=(18, 4))
     action2["total_pax"].plot(kind="bar", ax=ax[0], title="Total Pax by Day ID")
     action2["waited_groups"].plot(kind="bar", ax=ax[1], title="Waited Groups by Day ID")
     action2["avg_wait"].plot(kind="bar", ax=ax[2], title="Avg Waiting Time by Day ID")
     plt.tight_layout()
     st.pyplot(fig)
+    plt.close(fig)
 
-    st.warning("Conclusion: Not targeted. Congestion happens only on some days.")
+    st.markdown("""
+    <div class="judgement-box">
+        <b>Conclusion:</b> Not targeted. Congestion happens only on some days.
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.subheader("Action 3: Queue skipping for in-house guests")
 
     heat_tables = heat_df.pivot(index="date", columns="hour", values="active_tables").sort_index()
+
+    apply_dark_chart_style()
     fig, ax = plt.subplots(figsize=(12, 4))
-    sns.heatmap(heat_tables, annot=True, fmt=".0f", cmap="YlOrRd", ax=ax)
+    sns.heatmap(heat_tables, annot=True, fmt=".0f", cmap="Blues", ax=ax)
     ax.set_title("Active Tables by Day ID and Hour")
     st.pyplot(fig)
+    plt.close(fig)
 
     action3 = df.groupby("Guest_type").agg(
         waited_groups=("queue_start_td", lambda s: s.notna().sum()),
         avg_wait=("waiting_time", "mean"),
         walkaway_count=("walk_away", "sum")
     )
-    st.dataframe(action3.round(3), use_container_width=True)
 
-    st.warning("Conclusion: It does not increase capacity. It only shifts the waiting burden.")
+    st.dataframe(action3.round(3), use_container_width=True)
+    st.markdown("""
+    <div class="judgement-box">
+        <b>Conclusion:</b> Queue skipping does not increase capacity. It only shifts the waiting burden.
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -352,27 +456,34 @@ def show_task3(df, heat_df):
     task3["wait_rate"] = task3["waited_groups"] / task3["total_groups"]
     task3["walkaway_rate_among_waited"] = task3["walkaway_count"] / task3["waited_groups"]
 
+    apply_dark_chart_style()
     fig, ax = plt.subplots(1, 3, figsize=(16, 4))
     task3["wait_rate"].plot(kind="bar", ax=ax[0], title="Wait Rate")
     task3["avg_wait"].plot(kind="bar", ax=ax[1], title="Avg Waiting Time")
     task3["walkaway_rate_among_waited"].plot(kind="bar", ax=ax[2], title="Walk-away Rate Among Waited")
     plt.tight_layout()
     st.pyplot(fig)
+    plt.close(fig)
 
     peak_hours = heat_df.groupby("hour").agg(
         avg_active_tables=("active_tables", "mean")
     ).reset_index()
 
+    apply_dark_chart_style()
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.plot(peak_hours["hour"], peak_hours["avg_active_tables"], marker="o")
     ax.set_title("Average Active Tables by Hour")
     ax.set_xlabel("Hour")
     ax.set_ylabel("Average Active Tables")
     st.pyplot(fig)
+    plt.close(fig)
 
-    st.success("Recommendation: Reserve or prioritize some tables for in-house guests during peak hours only.")
+    st.markdown("""
+    <div class="judgement-box">
+        <b>Recommendation:</b> Reserve or prioritize some tables for in-house guests during peak hours only.
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
-
 
 # -----------------------------
 # Sidebar
@@ -411,12 +522,16 @@ if page == "Overview":
 
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.subheader("Peak-hour Table Pressure")
+
     heat_tables = heat_df.pivot(index="date", columns="hour", values="active_tables").sort_index()
 
+    apply_dark_chart_style()
     fig, ax = plt.subplots(figsize=(12, 4))
-    sns.heatmap(heat_tables, annot=True, fmt=".0f", cmap="YlOrRd", ax=ax)
+    sns.heatmap(heat_tables, annot=True, fmt=".0f", cmap="Blues", ax=ax)
     ax.set_title("Active Tables by Day ID and Hour")
     st.pyplot(fig)
+    plt.close(fig)
+
     st.markdown('</div>', unsafe_allow_html=True)
 
     with st.expander("Show cleaned data"):
